@@ -255,10 +255,7 @@ if __name__ == '__main__':
     #safePlace(new_puzzle, month, day, l, [0,0], pieces[0])
     puzzle_pieces = []
     for i in range(len(pieces)):
-        if i == 5 or i == 6:
-            puzzle_pieces.append(pieces[i])
-            puzzle_pieces.append(rotatePiece(pieces[i]))
-        elif i == 7:
+        if i == 5 or i == 6 or i == 7:
             puzzle_pieces.append(pieces[i])
             puzzle_pieces.append(rotatePiece(pieces[i]))
         else:
