@@ -4,15 +4,8 @@ from copy import deepcopy
 import time
 
 def getEmptySpot(puzzleBoard, month, day, l):
-    start = 0
-    if l != []:
-        start = l[0]
-    for i in range(start, len(puzzleBoard)):
-        if i == l[0]:
-            jstart = l[1]
-        else:
-            jstart = 0
-        for j in range(jstart, len(puzzleBoard[i])):
+    for i in range(len(puzzleBoard)):
+        for j in range(len(puzzleBoard[i])):
             if isinstance(puzzleBoard[i][j], str) and puzzleBoard[i][j] != month and puzzleBoard[i][j] != day:
                 l[0] = i
                 l[1] = j
@@ -51,21 +44,26 @@ def printPuzzle(puzzleBoard, month, day):
 
 def getNextStart(piece, start):
     """gets next starting position of a piece if it exists"""
-    startIndex = 0
-    if start != []:
-        startIndex = start[0]
-    for i in range(startIndex, len(piece)):
-        if i == l[0]:
-            jstart = l[1]
-        else:
-            jstart = 0
-        for j in range(jstart, len(piece[i])):
-            if (piece[i][j] != 0):
-                if start == []:
+    if start == []:
+        for i in range(len(piece)):
+            for j in range(len(piece)):
+                if piece[i][j] != 0:
                     start.append(i)
                     start.append(j)
                     return True
-                elif (i == start[0] and j > start[1]):
+    
+    iIndex = start[0]
+
+    for i in range(iIndex, len(piece)):
+        if i == start[0]:
+            jstart = start[1]
+        else:
+            jstart = 0
+        if (i == len(piece) - 1):
+            return False
+        for j in range(jstart + 1, len(piece[i])):
+            if (piece[i][j] != 0):
+                if (i == start[0] and j > start[1]):
                     start[0] = i
                     start[1] = j
                     return True
@@ -83,10 +81,12 @@ def revertPlacedPiece(puzzleBoard, pieceNumber, l, piece):
         else:
             jstart = 0
         for j in range(jstart, len(puzzleBoard[i])):
-            if i >= l[0] + len(piece) and j >= l[1] + len(piece):
-                return
+            piecelen = len(piece)
+            if i >= l[0] + piecelen and j >= l[1] + piecelen:
+                return False
             if puzzleBoard[i][j] == pieceNumber:
                 puzzleBoard[i][j] = puzzle[i][j]
+    return False
 
 def safePlace(puzzleBoard, month, day, l, start, piece, pieceNumber):
     """place a piece with a given location in mind, check that the piece is placed in a way that makes the puzzle solvable"""
@@ -95,50 +95,55 @@ def safePlace(puzzleBoard, month, day, l, start, piece, pieceNumber):
             if piece[i][j] != 0:
                 try:
                     if (i < start[0]):
-                        iIndex = l[0] - (start[0] - i)
+                        return revertPlacedPiece(puzzleBoard, pieceNumber, l, piece)
                     elif (i > start[0]):
                         iIndex = l[0] + (abs(start[0] - i))
-                    elif (i == start[0]):
+                    else:
                         iIndex = l[0]
                     if (j < start[1]):
                         jIndex = l[1] - (start[1] - j)
                     elif (j > start[1]):
                         jIndex = l[1] + (abs(start[1] - j))
-                    elif (j == start[1]):
+                    else:
                         jIndex = l[1]
                     boardPiece = puzzleBoard[iIndex][jIndex]
                     if boardPiece == month or boardPiece == day or isinstance(boardPiece, int) or iIndex < 0 or jIndex < 0:
-                        revertPlacedPiece(puzzleBoard, pieceNumber, l, piece)
-                        return False
+                        return revertPlacedPiece(puzzleBoard, pieceNumber, l, piece)
                     puzzleBoard[iIndex][jIndex] = piece[i][j]
                 except:
-                    revertPlacedPiece(puzzleBoard, pieceNumber, l, piece)
-                    return False
-    if hasHole(puzzleBoard, month, day):
-        return False
+                    return revertPlacedPiece(puzzleBoard, pieceNumber, l, piece)
+    if hasHole(puzzleBoard, month, day, l, piece):
+        return revertPlacedPiece(puzzleBoard, pieceNumber, l, piece)
     return puzzleBoard
 
-def hasHole(puzzleBoard, month, day):
+def hasHole(puzzleBoard, month, day, l, piece):
     """Checks if there is a single square that would be impossible to fill"""
-    for i in range(len(puzzleBoard)):
-        for j in range(len(puzzleBoard[i])):
+    for i in range(l[0], len(puzzleBoard)):
+        if i == l[0]:
+            jstart = l[1]
+        else:
+            jstart = 0
+        for j in range(jstart, len(puzzleBoard[i])):
+            piecelen = len(piece)
+            if i >= l[0] + piecelen and j >= l[1] + piecelen:
+                return False
             puzzlePiece = puzzleBoard[i][j]
             if isinstance(puzzlePiece, str) and puzzlePiece != month and puzzlePiece != day: 
                 up, down, left, right, check = i - 1, i + 1, j - 1, j + 1, []
                 try:
-                    check.append(isinstance(puzzleBoard[i][left], int))
+                    check.append(isinstance(puzzleBoard[i][left], int) or puzzleBoard[i][left] == month or puzzleBoard[i][left] == day)
                 except:
                     pass
                 try:
-                    check.append(isinstance(puzzleBoard[i][right], int))
+                    check.append(isinstance(puzzleBoard[i][right], int) or puzzleBoard[i][right] == month or puzzleBoard[i][right] == day)
                 except:
                     pass
                 try:
-                    check.append(isinstance(puzzleBoard[up][j], int))
+                    check.append(isinstance(puzzleBoard[up][j], int) or puzzleBoard[up][j] == month or puzzleBoard[up][j] == day)
                 except:
                     pass
                 try:
-                    check.append(isinstance(puzzleBoard[down][j], int))
+                    check.append(isinstance(puzzleBoard[down][j], int) or puzzleBoard[down][j] == month or puzzleBoard[down][j] == day)
                 except:
                     pass
                 if all(check):
